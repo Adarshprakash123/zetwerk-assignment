@@ -10,15 +10,21 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 function createApp() {
   const app = express();
-  const allowedOrigins = new Set([
-    process.env.CLIENT_ORIGIN,
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-  ].filter(Boolean));
+  const normalizeOrigin = (value) => value?.trim().replace(/\/$/, '');
+  const allowedOrigins = new Set(
+    [
+      ...(process.env.CLIENT_ORIGIN || '')
+        .split(',')
+        .map(normalizeOrigin)
+        .filter(Boolean),
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+    ].map(normalizeOrigin)
+  );
   const corsOptions = {
     origin(origin, callback) {
       // Allow tools like curl/Postman that do not send an Origin header.
-      if (!origin || allowedOrigins.has(origin)) {
+      if (!origin || allowedOrigins.has(normalizeOrigin(origin))) {
         return callback(null, true);
       }
 
